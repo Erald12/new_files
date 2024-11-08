@@ -230,7 +230,6 @@ class TradingEnvironment:
                 future_low = self.low_price[self.current_step + step_ahead]
                 future_high = self.high_price[self.current_step + step_ahead]
                 low_and_high.append((future_low, future_high))
-        print(len(low_and_high))
 
         ema5_current, ema8_current, ema100_current = self.ema5[self.current_step], self.ema8[self.current_step], self.ema100[self.current_step]
         ema5_prev, ema8_prev, ema100_prev = self.ema5[self.current_step - 1], self.ema8[self.current_step - 1], self.ema100[self.current_step - 1]
@@ -335,8 +334,7 @@ def evaluate_genome(genomes, config, save_path="best_genome2.pkl"):
             else:
                 winrate = set.count(1) / len(set)
 
-            print(
-                f'Trader: {genome_id}, PNL%: {round(PNL, 2)}%, Winrate: {round(winrate, 2) * 100}%, Wins: {win}, Loss: {loss}')
+            print(f'Trader: {genome_id}, PNL%: {round(PNL, 2)}%, Winrate: {round(winrate, 2) * 100}%, Wins: {win}, Loss: {loss}')
             genome.fitness = max(total_profit, 0)  # Set fitness, ensuring no negative values
 
             # Track the best genome
@@ -372,7 +370,7 @@ def run_neat(config_path):
     p.add_reporter(stats)
 
     # Run for a certain number of generations
-    winner = p.run(evaluate_genome, 100)
+    winner = p.run(evaluate_genome, 200)
     print('\nBest genome:\n{!s}'.format(winner))
 
 
