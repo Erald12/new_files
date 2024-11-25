@@ -513,10 +513,43 @@ while True:
         stats = neat.StatisticsReporter()
         p.add_reporter(stats)
 
+        # Function to prune low-weight connections
+        def prune_low_weight_connections(genome, threshold=0.01):
+            """
+            Prunes low-weight connections from a genome.
+            Parameters:
+                genome: The genome to prune connections from.
+                threshold: The weight magnitude below which connections are pruned.
+            """
+            for conn_key in list(genome.connections.keys()):  # Iterate over connection keys
+                connection = genome.connections[conn_key]
+                if abs(connection.weight) < threshold:  # Check if the weight is below the threshold
+                    connection.enabled = False  # Disable the connection
+
+        # Function to prune unconnected nodes
+        def prune_unconnected_nodes(genome):
+            """
+            Removes nodes from the genome that are not part of any enabled connection.
+            Parameters:
+                genome: The genome to prune nodes from.
+            """
+            # Gather all nodes involved in enabled connections
+            connected_nodes = set()
+            for conn_key, conn in genome.connections.items():
+                if conn.enabled:  # Only consider enabled connections
+                    connected_nodes.add(conn_key[0])  # Add input node
+                    connected_nodes.add(conn_key[1])  # Add output node
+
+            # Remove nodes not connected to any enabled connection
+            for node_key in list(genome.nodes.keys()):
+                if node_key not in connected_nodes:
+                    del genome.nodes[node_key]  # Remove the node
+
         profits_2 = 20
+        generation = 0
         # Define fitness function for NEAT
-        def evaluate_genomes(genomes, config):
-            nonlocal best_genome, best_net,profits_2  # Use outer-scope variables
+        def evaluate_genomes(genomes, config, prune_every=10):
+            nonlocal best_genome, best_net, profits_2, generation  # Use outer-scope variables
             best_fitness = float('-inf')
             best_test = float('-inf')
 
@@ -538,6 +571,7 @@ while True:
 
                 env2 = TradingEnvironment(second_half)
                 env2.reset()
+
 
                 total_profit = 0
                 while True:
@@ -587,8 +621,8 @@ while True:
                 genome.fitness = max(total_profit, 0)
 
 
-                if genome.fitness >20 and total_profit2 < profits_2:
-                    genome.fitness = 0
+                #if genome.fitness >20 and total_profit2 < profits_2:
+                #    genome.fitness = 0
 
 
                 # Print genome performance
@@ -600,6 +634,14 @@ while True:
                     best_genome = genome
                     best_net = net
                     profits_2 = total_profit2
+
+                # Prune low-weight connections periodically
+                if generation % prune_every == 0:
+                    prune_low_weight_connections(genome)
+                    prune_unconnected_nodes(genome)
+                    print('Low weight connections and unconnected nodes pruned.')
+
+            generation +=1
 
             # Save the best genome and network after evaluations
             if best_genome:
@@ -614,8 +656,10 @@ while True:
         best_genome = None
         best_net = None
 
+        prune_every = 10
+        generation = 0
         # Run the NEAT algorithm
-        p.run(evaluate_genomes, generations)
+        p.run(lambda genomes,config: evaluate_genomes(genomes, config, prune_every), generations)
         print('\nBest genome:\n{!s}'.format(best_genome))
 
 
