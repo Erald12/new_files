@@ -349,7 +349,7 @@ while True:
 
             elif action == -1 and len(self.entry) > 0:
                 self.action_list.append(-1)
-                if price > self.entry[0] and self.side[0] == 1:
+                if price > self.entry[0] and self.side[0] == 1 and self.low_price[self.current_step] > self.stop_loss[0] and self.high_price[self.current_step] < self.take_profit[0]:
                     self.winloss.append(1)
                     pct = abs((price - self.entry[0]) / self.entry[0])
                     self.profits.append((self.amount[0] * self.leverage[0] * pct) - (self.amount[0] * self.leverage[0] * 0.0005))
@@ -361,7 +361,7 @@ while True:
                     self.leverage.clear()
                     self.side.clear()
 
-                elif price < self.entry[0] and self.side[0] == 1:
+                elif price < self.entry[0] and self.side[0] == 1 and self.low_price[self.current_step] > self.stop_loss[0] and self.high_price[self.current_step] < self.take_profit[0]:
                     self.winloss.append(-1)
                     pct = abs((price - self.entry[0]) / self.entry[0])
                     self.profits.append(-(self.amount[0] * self.leverage[0] * pct) - (self.amount[0] * self.leverage[0] * 0.0005))
@@ -373,7 +373,7 @@ while True:
                     self.leverage.clear()
                     self.side.clear()
 
-                elif price > self.entry[0] and self.side[0] == -1:
+                elif price > self.entry[0] and self.side[0] == -1 and self.high_price[self.current_step] < self.stop_loss[0] and self.low_price[self.current_step] > self.take_profit[0]:
                     self.winloss.append(-1)
                     pct = abs((price - self.entry[0]) / self.entry[0])
                     self.profits.append(-(self.amount[0] * self.leverage[0] * pct) - (self.amount[0] * self.leverage[0] * 0.0005))
@@ -385,7 +385,7 @@ while True:
                     self.leverage.clear()
                     self.side.clear()
 
-                elif price < self.entry[0] and self.side[0] == -1:
+                elif price < self.entry[0] and self.side[0] == -1 and self.high_price[self.current_step] < self.stop_loss[0] and self.low_price[self.current_step] > self.take_profit[0]:
                     self.winloss.append(1)
                     pct = abs((price - self.entry[0]) / self.entry[0])
                     self.profits.append((self.amount[0] * self.leverage[0] * pct) - (self.amount[0] * self.leverage[0] * 0.0005))
@@ -404,7 +404,7 @@ while True:
                     self.balance -= self.balance * 0.03
                     self.winloss.append(-1)
                     self.profits.append(-(self.amount[0] * 0.03) - (self.amount[0] * self.leverage[0] * 0.0005))
-                    self.fit.append(-float(1))
+                    self.fit.append(float(0))
                     self.entry.clear()
                     self.take_profit.clear()
                     self.stop_loss.clear()
@@ -412,17 +412,43 @@ while True:
                     self.leverage.clear()
                     self.side.clear()
 
-                elif self.side[0] == -1 and self.high_price[self.current_step] >= self.stop_loss[0]:
-                    self.balance -= self.balance * 0.03
-                    self.winloss.append(-1)
-                    self.profits.append(-(self.amount[0] * 0.03) - (self.amount[0] * self.leverage[0] * 0.0005))
-                    self.fit.append(-float(1))
-                    self.entry.clear()
-                    self.take_profit.clear()
-                    self.stop_loss.clear()
-                    self.amount.clear()
-                    self.leverage.clear()
-                    self.side.clear()
+                elif len(self.side)>0 and len(self.take_profit)>0 and self.high_price[self.current_step]>0:
+                    if self.side[0] == 1 and self.high_price[self.current_step] >= self.take_profit[0]:
+                        self.balance += self.balance * 0.15
+                        self.winloss.append(1)
+                        self.profits.append((self.amount[0] * 0.15) - (self.amount[0] * self.leverage[0] * 0.0005))
+                        self.fit.append(float(0))
+                        self.entry.clear()
+                        self.take_profit.clear()
+                        self.stop_loss.clear()
+                        self.amount.clear()
+                        self.leverage.clear()
+                        self.side.clear()
+                elif len(self.side)>0 and len(self.stop_loss)>0 and self.high_price[self.current_step]>0:
+                    if self.side[0] == -1 and self.high_price[self.current_step] >= self.stop_loss[0]:
+                        self.balance -= self.balance * 0.03
+                        self.winloss.append(-1)
+                        self.profits.append(-(self.amount[0] * 0.03) - (self.amount[0] * self.leverage[0] * 0.0005))
+                        self.fit.append(float(0))
+                        self.entry.clear()
+                        self.take_profit.clear()
+                        self.stop_loss.clear()
+                        self.amount.clear()
+                        self.leverage.clear()
+                        self.side.clear()
+
+                elif len(self.side)>0 and len(self.take_profit)>0 and self.low_price[self.current_step]>0:
+                    if self.side[0] == -1 and self.low_price[self.current_step] <= self.take_profit[0]:
+                        self.balance += self.balance * 0.15
+                        self.winloss.append(1)
+                        self.profits.append((self.amount[0] * 0.15) - (self.amount[0] * self.leverage[0] * 0.0005))
+                        self.fit.append(float(0))
+                        self.entry.clear()
+                        self.take_profit.clear()
+                        self.stop_loss.clear()
+                        self.amount.clear()
+                        self.leverage.clear()
+                        self.side.clear()
 
             else:
                 self.action_list.append(0)
@@ -456,19 +482,6 @@ while True:
         p.add_reporter(neat.StdOutReporter(True))
         stats = neat.StatisticsReporter()
         p.add_reporter(stats)
-
-        # Function to prune low-weight connections
-        def prune_low_weight_connections(genome, threshold=0.01):
-            """
-            Prunes low-weight connections from a genome.
-            Parameters:
-                genome: The genome to prune connections from.
-                threshold: The weight magnitude below which connections are pruned.
-            """
-            for conn_key in list(genome.connections.keys()):  # Iterate over connection keys
-                connection = genome.connections[conn_key]
-                if abs(connection.weight) < threshold:  # Check if the weight is below the threshold
-                    connection.enabled = False  # Disable the connection
 
         # Function to prune unconnected nodes
         def prune_unconnected_nodes(genome):
@@ -565,12 +578,8 @@ while True:
                 genome.fitness = max(fit, 0)
 
 
-                if total_profit >20 and total_profit2 < profits_2:
-                    genome.fitness = 0
-
-
                 # Print genome performance
-                print(f'Trader: {genome_id}, PNL%: {round(PNL, 2)}%, PNL2%: {round(PNL2,2)}')
+                print(f'Trader: {genome_id}, PNL%: {round(PNL, 2)}%, PNL2%: {round(PNL2,2)}, Fitness: {fit}')
 
                 # Track the best genome
                 if genome.fitness > best_fitness:
@@ -579,11 +588,12 @@ while True:
                     best_net = net
                     profits_2 = total_profit2
 
+
                 # Prune low-weight connections periodically
-                if generation % prune_every == 0:
+                #if generation % prune_every == 0:
                     #prune_low_weight_connections(genome)
-                    prune_unconnected_nodes(genome)
-                    print('Low weight connections and unconnected nodes pruned.')
+                    #prune_unconnected_nodes(genome)
+                    #print('Low weight connections and unconnected nodes pruned.')
 
             generation +=1
 
